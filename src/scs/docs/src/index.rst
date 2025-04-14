@@ -83,12 +83,28 @@ Features
 * **Flexible**: Supports quadratic objectives and a large range of :ref:`cones <cones>`.
 * **Free and open source**: Distributed under the permissive `MIT license <https://github.com/cvxgrp/scs/blob/master/LICENSE.txt>`_.
 * **Detects infeasibility**: Robustly and reliably detects :ref:`infeasible <infeasibility>` problems.
-* **Interfaces**: Bindings for many :ref:`languages <interfaces>`, including C, Python, Julia, R, MATLAB, and Ruby.
+* **Interfaces**: Bindings for many :ref:`languages <interfaces>`, including C, Python, Julia, R, MATLAB, Ruby, and JavaScript via WebAssembly.
 * **Warm starts**: Easily :ref:`warm-started <warm_start>`, and the matrix factorization can be cached.
 * **Matrix-free**: Optionally use an :ref:`indirect linear system solver <indirect>`, or a :ref:`GPU version <gpu_indirect>`.
 * **Supported**: A supported solver in `CVX <http://cvxr.com/cvx/>`_, `CVXPY <https://github.com/cvxgrp/cvxpy>`_, `YALMIP <https://github.com/johanlofberg/YALMIP>`_, `Convex.jl <https://github.com/jump-dev/Convex.jl>`_  and `JuMP <https://github.com/jump-dev/JuMP.jl>`_.
 * **Accelerated**: Includes :ref:`acceleration <acceleration>` that can improve convergence to high accuracy.
 * **Battle-tested**: The first ADMM-based solver available, and in wide usage.
+
+Performance
+-----------
+
+SCS is a fast and reliable optimization library. For instance, it is one of the
+most performant solvers as determined by the third-party `QP solvers benchmark
+<https://github.com/qpsolvers/qpbenchmark>`_ on the challenging Maros-Meszaros
+QP test suite. This is despite SCS being a general quadratic conic solver and
+not specifically tailored for QPs.
+
+.. figure:: files/qp_solvers_benchmark.png
+   :scale: 80 %
+   :align: center
+   :alt: map to buried treasure
+
+   SCS is faster and more reliable than most other solvers.
 
 
 Development

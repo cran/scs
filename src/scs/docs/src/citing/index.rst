@@ -48,10 +48,10 @@ If you wish to cite SCS, please use any of the following:
 
         @misc{scs,
             author       = {Brendan O'Donoghue and Eric Chu and Neal Parikh and Stephen Boyd},
-            title        = {{SCS}: Splitting Conic Solver, version 3.2.3},
+            title        = {{SCS}: Splitting Conic Solver, version 3.2.7},
             howpublished = {\url{https://github.com/cvxgrp/scs}},
             month        = nov,
-            year         = 2022
+            year         = 2023
         }
 
   Anderson Acceleration
