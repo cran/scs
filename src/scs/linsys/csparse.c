@@ -7,7 +7,7 @@ ScsMatrix *SCS(cs_spalloc)(scs_int m, scs_int n, scs_int nzmax, scs_int values,
   ScsMatrix *A = (ScsMatrix *)scs_calloc(1, sizeof(ScsMatrix));
   if (!A) {
     return SCS_NULL;
-  }         /* out of memory */
+  } /* out of memory */
   A->m = m; /* define dimensions and nzmax */
   A->n = n;
   A->p = (scs_int *)scs_calloc((triplet ? nzmax : n + 1), sizeof(scs_int));
@@ -205,11 +205,17 @@ ScsMatrix *SCS(form_kkt)(const ScsMatrix *A, const ScsMatrix *P,
   }
 
   idx_mapping = (scs_int *)scs_calloc(count, sizeof(scs_int));
-  Kcsc = SCS(cs_compress)(K, count, idx_mapping);
-  for (i = 0; i < m + n; i++) {
-    diag_r_idxs[i] = idx_mapping[diag_r_idxs[i]];
+  if (!idx_mapping) {
+    SCS(cs_spfree)(K);
+    return SCS_NULL;
   }
+  Kcsc = SCS(cs_compress)(K, count, idx_mapping);
   SCS(cs_spfree)(K);
+  if (Kcsc) {
+    for (i = 0; i < m + n; i++) {
+      diag_r_idxs[i] = idx_mapping[diag_r_idxs[i]];
+    }
+  }
   scs_free(idx_mapping);
   return Kcsc;
 }

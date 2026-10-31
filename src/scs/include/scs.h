@@ -14,6 +14,7 @@ extern "C" {
 
 /* Contains definitions of primitive types `scs_int` and `scs_float`. */
 #include "scs_types.h"
+#include "aa_stats.h"
 
 #define SCS_NULL 0 /* NULL type */
 
@@ -64,6 +65,12 @@ typedef struct {
   scs_float scale;
   /** Whether to adaptively update `scale`. */
   scs_int adaptive_scale;
+  /** Dynamic diagonal rescaling from residual profiles: 0 = off,
+   *  1 = per-row (rescales the R_y diagonal from the row-wise primal
+   *  residual profile; uniform within non-polyhedral cone blocks; the
+   *  default). Requires `adaptive_scale` (silently disabled without
+   *  it). */
+  scs_int adaptive_diag_scale;
   /** Primal constraint scaling factor. */
   scs_float rho_x;
   /** Maximum iterations to take. */
@@ -82,10 +89,17 @@ typedef struct {
   scs_int verbose;
   /** Whether to use warm start (put initial guess in ScsSolution struct). */
   scs_int warm_start;
-  /** Memory for acceleration. */
+  /** Memory for acceleration. Set to 0 to disable AA. Must be nonnegative. */
   scs_int acceleration_lookback;
   /** Interval to apply acceleration. */
   scs_int acceleration_interval;
+  /** Whether AA uses type-I (1) or type-II (0). */
+  scs_int acceleration_type_1;
+  /** Tikhonov regularization for the AA least-squares solve.
+   *  See `aa_init` in include/aa.h for the sign-encoded modes. */
+  scs_float acceleration_regularization;
+  /** AA relaxation factor in [0, 2]. 1.0 recovers vanilla AA. */
+  scs_float acceleration_relaxation;
   /** String, if set will dump raw prob data to this file. */
   const char *write_data_filename;
   /** String, if set will log data to this csv file (makes SCS very slow). */
@@ -130,6 +144,10 @@ typedef struct {
   scs_int *s;
   /** Length of semidefinite constraints array `s`. */
   scs_int ssize;
+  /** Array of complex semidefinite cone constraints, `len(cs) = cssize`. */
+  scs_int *cs;
+  /** Length of complex semidefinite constraints array `cs`. */
+  scs_int cssize;
   /** Number of primal exponential cone triples. */
   scs_int ep;
   /** Number of dual exponential cone triples. */
@@ -139,6 +157,24 @@ typedef struct {
   scs_float *p;
   /** Number of (primal and dual) power cone triples. */
   scs_int psize;
+#ifdef USE_SPECTRAL_CONES
+  /** Array of logdet cone constraints 'len(d) = dsize'. The dimension of a
+   * log-det cone is "n" and not "n+2" if the matrix has dimension n */
+  scs_int *d;
+  /** Length of logdet cone constraints array `d`. */
+  scs_int dsize;
+  /** Array of nuc norm cone constraints 'len(nuc_m) = len(nuc_n) = nucsize.*/
+  scs_int *nuc_m;
+  scs_int *nuc_n;
+  scs_int nucsize;
+  /** Array of ell1-norm cone constraints 'len(ell1) = ell1_size */
+  scs_int *ell1;
+  scs_int ell1_size;
+  /** Array of sum-of-largest-evals cone  */
+  scs_int *sl_n;
+  scs_int *sl_k;
+  scs_int sl_size;
+#endif
 } ScsCone;
 
 /** Contains primal-dual solution arrays or a certificate of infeasibility.
@@ -196,12 +232,21 @@ typedef struct {
   scs_int rejected_accel_steps;
   /** Number of accepted AA steps. */
   scs_int accepted_accel_steps;
+  /** Detailed Anderson acceleration diagnostics. */
+  AaStats aa_stats;
   /** Total time (milliseconds) spent in the linear system solver. */
   scs_float lin_sys_time;
   /** Total time (milliseconds) spent in the cone projection. */
   scs_float cone_time;
   /** Total time (milliseconds) spent in the acceleration routine. */
   scs_float accel_time;
+#ifdef SPECTRAL_TIMING_FLAG
+  /** Average time (milliseconds) per iteration matrix cone projection */
+  scs_float ave_time_matrix_cone_proj;
+  /** Average time (milliseconds) per iteration for spectral vector cone
+   * projection */
+  scs_float ave_time_vector_cone_proj;
+#endif
 } ScsInfo;
 
 /*

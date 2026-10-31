@@ -1,3 +1,9 @@
+/*
+ * Dense linear algebra operations: norms, dot products, scaling, axpy.
+ * Has two implementations: a plain C fallback and an optimized BLAS version
+ * (selected at compile time via USE_LAPACK).
+ */
+
 #include "linalg.h"
 #include "scs_blas.h"
 #include <math.h>
@@ -86,6 +92,9 @@ void SCS(add_scaled_array)(scs_float *a, const scs_float *b, scs_int n,
 scs_float SCS(mean)(const scs_float *x, scs_int n) {
   scs_int i;
   scs_float mean = 0.;
+  if (n == 0) {
+    return 0.;
+  }
   for (i = 0; i < n; ++i) {
     mean += x[i];
   }
@@ -133,8 +142,9 @@ scs_float SCS(dot)(const scs_float *x, const scs_float *y, scs_int len) {
 
 /* ||v||_2^2 */
 scs_float SCS(norm_sq)(const scs_float *v, scs_int len) {
-  scs_float nrm = SCS(norm_2)(v, len);
-  return nrm * nrm;
+  blas_int bone = 1;
+  blas_int blen = (blas_int)len;
+  return BLAS(dot)(&blen, v, &bone, v, &bone);
 }
 
 /* ||v||_2 */
@@ -160,6 +170,18 @@ scs_float SCS(norm_inf)(const scs_float *a, scs_int len) {
   if (len <= 0) {
     return 0.0;
   }
+  /* For short vectors the BLAS function-call overhead (pointer args,
+   * Fortran ABI, 1-based index return) exceeds the arithmetic cost.
+   * Use a scalar loop below a threshold. */
+  if (len <= 16) {
+    scs_float mx = 0.0, tmp;
+    scs_int i;
+    for (i = 0; i < len; ++i) {
+      tmp = ABS(a[i]);
+      if (tmp > mx) mx = tmp;
+    }
+    return mx;
+  }
   idx = (scs_int)BLASI(amax)(&blen, a, &bone);
   /* Returned idx is 1-based. */
   return ABS(a[idx - 1]);
@@ -178,6 +200,9 @@ scs_float SCS(mean)(const scs_float *x, scs_int n) {
   blas_int bzero = 0;
   blas_int blen = (blas_int)n;
   scs_float y = 1.0;
+  if (n == 0) {
+    return 0.;
+  }
   return BLAS(dot)(&blen, x, &bone, &y, &bzero) / n;
 }
 
